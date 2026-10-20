@@ -12,8 +12,11 @@ import (
 )
 
 func Start(ctx context.Context, host, port string, reg registry.Registration, registerHandlerFunc func()) (context.Context, error) {
+	// 注册handlers
 	registerHandlerFunc()
+	// 启动服务器
 	ctx = startService(ctx, reg.ServiceName, host, port)
+	// 向注册中心发送自己的信息
 	err := registry.RegisterService(reg)
 	if err != nil {
 		return ctx, err
