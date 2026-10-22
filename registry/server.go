@@ -26,8 +26,50 @@ func (r *registry) add(reg Registration) error {
 	r.mutex.Lock()
 	r.registrations = append(r.registrations, reg)
 	r.mutex.Unlock()
-
+	// 通知依赖该服务的服务进行更新
+	r.notify(patch{
+		Added: []patchEntry{
+			{
+				Name: reg.ServiceName,
+				URL:  reg.ServiceURL,
+			},
+		},
+	})
 	return nil
+}
+
+func (r *registry) notify(commingPatch patch) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	for _, reg := range r.registrations {
+		go func(reg Registration) {
+			for _, reqService := range reg.RequiredServices {
+				p := patch{Added: []patchEntry{}, Removed: []patchEntry{}}
+				sendUpdate := false
+				for _, added := range commingPatch.Added {
+					if added.Name == reqService {
+						p.Added = append(p.Added, added)
+						sendUpdate = true
+					}
+				}
+				for _, removed := range commingPatch.Removed {
+					if removed.Name == reqService {
+						p.Removed = append(p.Removed, removed)
+						sendUpdate = true
+					}
+				}
+				if sendUpdate {
+					// TODO 可能会失败
+					err := r.sendPatch(reg.ServiceHookURL, p)
+					if err != nil {
+						log.Println(err)
+						return
+					}
+				}
+			}
+		}(reg)
+	}
 }
 
 func (r *registry) sendRequireServices(reg Registration) error {
@@ -70,16 +112,25 @@ func (r *registry) sendPatch(url string, p patch) error {
 	return nil
 }
 
-// TODO: 通知依赖该服务的服务在本地删除Provider
+// 通知依赖该服务的服务
 func (r *registry) remove(url string) error {
 	r.mutex.Lock()
-	defer r.mutex.Unlock()
-	for i := range reg.registrations {
-		if reg.registrations[i].ServiceURL == url {
-			reg.registrations = append(reg.registrations[:i], reg.registrations[i+1:]...)
+	var removed patch
+	for i := range r.registrations {
+		if r.registrations[i].ServiceURL == url {
+			removed = patch{
+				Removed: []patchEntry{{
+					Name: r.registrations[i].ServiceName,
+					URL:  r.registrations[i].ServiceURL,
+				}},
+			}
+			r.registrations = append(r.registrations[:i], r.registrations[i+1:]...)
+			r.mutex.Unlock() // 先解锁避免死锁
+			r.notify(removed)
 			return nil
 		}
 	}
+	r.mutex.Unlock()
 	return fmt.Errorf("Failed to find the service to be removed with URL : %v", url)
 }
 

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 )
 
 func RegisterService(r Registration) error {
@@ -43,7 +44,8 @@ func ShutdownService(url string) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "text/plain")
-	res, err := http.DefaultClient.Do(req)
+	client := http.Client{Timeout: 5 * time.Second}
+	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -69,6 +71,7 @@ func (this serviceHookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	fmt.Printf("Updated received %v\n", p)
 	pvd.Update(p)
 }
 

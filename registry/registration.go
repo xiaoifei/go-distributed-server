@@ -14,7 +14,6 @@ type ServiceName string
 
 const (
 	LogService        = ServiceName("LogService")
-	BusinessService   = ServiceName("BusinessService")
 	SeperationService = ServiceName("SeperationService")
 )
 
