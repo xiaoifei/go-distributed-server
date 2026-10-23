@@ -5,6 +5,7 @@ import (
 	"fmt"
 	stdlog "log"
 	"net/http"
+	"os"
 
 	"xiaoifei.top/registry"
 )
@@ -14,6 +15,12 @@ func SetClientLogger(serviceURL string, clientService registry.ServiceName) {
 	stdlog.SetPrefix(fmt.Sprintf("[%v] - ", clientService))
 	stdlog.SetFlags(0)
 	stdlog.SetOutput(&clientLogger{url: serviceURL})
+}
+
+func SetDefaultLogger() {
+	stdlog.SetOutput(os.Stderr)
+	stdlog.SetPrefix("")
+	stdlog.SetFlags(stdlog.LstdFlags)
 }
 
 type clientLogger struct {

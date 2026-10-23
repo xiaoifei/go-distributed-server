@@ -30,10 +30,15 @@ func main() {
 		stdlog.Fatalln(err)
 	}
 
-	if logProvider, err := registry.GetProvider(registry.LogService); err == nil {
+	registry.OnProviderChange(registry.LogService, func() {
+		logProvider, err := registry.GetProvider(registry.LogService)
+		if err != nil {
+			log.SetDefaultLogger()
+			return
+		}
 		fmt.Printf("Logging service found at: %s\n", logProvider)
 		log.SetClientLogger(logProvider, registry.SeperationService)
-	}
+	})
 
 	<-ctx.Done()
 	fmt.Println("Shutdown Service")
