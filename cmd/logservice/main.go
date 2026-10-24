@@ -23,6 +23,7 @@ func main() {
 			ServiceURL:       serviceAddress,
 			RequiredServices: make([]registry.ServiceName, 0),
 			ServiceHookURL:   serviceAddress + "/services",
+			HeartbeatURL:     serviceAddress + "/heartbeat",
 		},
 		log.RegisterHandelers,
 	)

@@ -8,6 +8,7 @@ type Registration struct {
 	ServiceURL       string
 	RequiredServices []ServiceName
 	ServiceHookURL   string
+	HeartbeatURL     string
 }
 
 type ServiceName string

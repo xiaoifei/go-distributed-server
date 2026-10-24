@@ -13,6 +13,14 @@ import (
 )
 
 func RegisterService(r Registration) error {
+	heartbeatURL, err := url.Parse(r.HeartbeatURL)
+	if err != nil {
+		return err
+	}
+	http.HandleFunc(heartbeatURL.Path, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	serviceHookURL, err := url.Parse(r.ServiceHookURL)
 	if err != nil {
 		return err
